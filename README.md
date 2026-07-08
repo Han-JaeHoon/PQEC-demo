@@ -83,7 +83,3 @@ Measured error thresholds (crossing point of ℓ=1 vs ℓ=3 curves):
 cross exactly at the thresholds p=3/4 (depolarizing) and p=1/2 (dephasing):
 
 ![Thresholds](pqec_thresholds.png)
-
-## License
-
-MIT
