@@ -1,0 +1,20 @@
+# Python virtual environment
+pqec_env/
+venv/
+.venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# macOS
+.DS_Store
+
+# Editor / tooling
+.claude/
+.vscode/
+.idea/
+
+# NOTE: generated figures (*.png) ARE committed so the README can display them.
+# They can be regenerated any time with `python verify_pqec.py` / `draw_circuits.py`.

@@ -1,0 +1,5 @@
+# Core dependencies for the PQEC verification code.
+# Install with:  pip install -r requirements.txt
+pennylane>=0.45
+numpy>=2.0
+matplotlib>=3.8
