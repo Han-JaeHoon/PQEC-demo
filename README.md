@@ -29,6 +29,7 @@ precision, then reproduces the error-correction and threshold behaviour.
 | [`pqec.py`](pqec.py) | Core library: SWAP gadget as an explicit `default.mixed` circuit (H–CSWAP–H), purification map, noise channels, fidelity helpers |
 | [`verify_pqec.py`](verify_pqec.py) | Verifies Eqs. (5)–(10), (7), (34); reproduces fidelity-vs-rounds and error thresholds; saves figures |
 | [`draw_circuits.py`](draw_circuits.py) | Draws the full quantum circuits (Figs. 1 & 2) |
+| [`deutsch_pqec.py`](deutsch_pqec.py) | **Applies PQEC to a real algorithm** — purifies the noisy output of the 2-qubit Deutsch algorithm and restores the answer |
 
 ## Setup & run
 
@@ -39,7 +40,37 @@ pip install -r requirements.txt
 
 python verify_pqec.py     # numerical checks + result figures
 python draw_circuits.py   # circuit diagrams
+python deutsch_pqec.py    # PQEC applied to the Deutsch algorithm
+python draw_deutsch_pqec.py   # full Deutsch + PQEC circuit diagram
 ```
+
+## Applying PQEC to an algorithm: the Deutsch algorithm
+
+[`deutsch_pqec.py`](deutsch_pqec.py) plugs the purification gadget into a real
+computation. The 2-qubit **Deutsch algorithm** decides whether a one-bit
+function is *constant* or *balanced* in a single oracle query; ideally its
+query qubit ends in a pure `|0⟩` (constant) or `|1⟩` (balanced), read with
+certainty. A depolarizing channel on the output turns that qubit into a *mixed*
+state and the answer becomes uncertain.
+
+Because the correct answer is the **dominant eigenvector** of the noisy output,
+feeding it back through the genuine SWAP-gadget circuit (`ρ → ρ²/Tr[ρ²]`)
+concentrates weight back onto the right answer — no knowledge of which answer
+is correct required. At `p=0.30` the success probability climbs
+`0.80 → 0.94 → 0.996 → 1.000` over three purification rounds.
+
+The same `p=3/4` depolarizing threshold reappears: **below it purification
+drives P(correct) → 1, above it it amplifies the wrong answer → 0**, and all
+round-count curves cross exactly at `p=3/4`.
+
+![Deutsch + PQEC](deutsch_pqec.png)
+
+**Full circuit** ([`draw_deutsch_pqec.py`](draw_deutsch_pqec.py)) — one
+purification round needs two identical noisy copies, so the complete circuit is
+two Deutsch runs (each `X·H·H·U_f·H·noise`) feeding a SWAP gadget
+(`H–CSWAP–H–measure`) between the two query qubits:
+
+![Deutsch + PQEC circuit](deutsch_pqec_circuit.png)
 
 ## What is verified
 
