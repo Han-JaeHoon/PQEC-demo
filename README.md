@@ -32,6 +32,8 @@ precision, then reproduces the error-correction and threshold behaviour.
 | [`deutsch_pqec.py`](deutsch_pqec.py) | **Applies PQEC to a real algorithm** — purifies the noisy output of the 2-qubit Deutsch algorithm and restores the answer (depolarizing, `p_th=3/4`) |
 | [`deutsch_pqec_bitflip.py`](deutsch_pqec_bitflip.py) | Same demo under a **bit-flip** channel on the output qubit (`p_th=1/2`) |
 | [`draw_deutsch_pqec.py`](draw_deutsch_pqec.py) | Draws the full Deutsch + one-round PQEC circuit |
+| [`bell_pqec.py`](bell_pqec.py) | **Restores a Bell state** from many noisy copies — 2-qubit (M=2) PQEC recovers both fidelity and entanglement |
+| [`draw_bell_pqec.py`](draw_bell_pqec.py) | Draws the full noisy-Bell ×2 + M=2 SWAP-gadget circuit |
 
 ## Setup & run
 
@@ -45,6 +47,8 @@ python draw_circuits.py   # circuit diagrams
 python deutsch_pqec.py         # PQEC on Deutsch, depolarizing noise (p_th=3/4)
 python deutsch_pqec_bitflip.py # PQEC on Deutsch, bit-flip noise    (p_th=1/2)
 python draw_deutsch_pqec.py    # full Deutsch + PQEC circuit diagram
+python bell_pqec.py            # restore a Bell state from noisy copies
+python draw_bell_pqec.py       # full noisy-Bell x2 + M=2 gadget circuit
 ```
 
 ## Applying PQEC to an algorithm: the Deutsch algorithm
@@ -91,6 +95,40 @@ recovers it — `P(correct) = 0.70 → 0.84 → 0.97 → 0.999 → 1.000` at `p=
 | Bit-flip                | `0.70 → 1.000`           | **0.500**       | 1/2    |
 
 ![Deutsch + PQEC, bit-flip](deutsch_pqec_bitflip.png)
+
+## Restoring a Bell state from noisy copies
+
+[`bell_pqec.py`](bell_pqec.py) generalizes PQEC from one qubit to a **2-qubit
+register**: a Bell factory (`H`–`CNOT` → `|Φ⁺⟩`) emits noisy mixed copies, and
+the SWAP gadget becomes a SWAP *test* between two 2-qubit registers (**M=2 =
+two parallel Fredkin gates** + ancilla). Reading the ancilla still extracts
+`ρ²/Tr[ρ²]` (dimension-independent), which concentrates weight on the dominant
+eigenvector — `|Φ⁺⟩` while below threshold.
+
+Under **local depolarizing p=0.30**, a single copy is barely entangled
+(`F=0.52`, concurrence `0.04`); purification restores **both fidelity and
+entanglement** to 1, consuming `N=2^ℓ` copies:
+
+| rounds ℓ | copies N | fidelity | concurrence |
+|:--------:|:--------:|:--------:|:-----------:|
+| 0 | 1 | 0.520 | 0.040 |
+| 1 | 2 | 0.779 | 0.558 |
+| 2 | 4 | 0.974 | 0.948 |
+| 3 | 8 | 1.000 | 0.999 |
+
+Threshold structure depends on the channel (measured):
+
+- **Local depolarizing (both qubits):** `|Φ⁺⟩` stays the dominant Bell component
+  for every `p`, so it is restored everywhere **except the single fully-mixed
+  point `p=3/4`** (`ρ=I/4`, a fixed point).
+- **Bit-flip (one qubit):** clean threshold **`p=1/2`** — below it `|Φ⁺⟩` is
+  restored, above it purification amplifies the *wrong* Bell state `|Ψ⁺⟩`.
+
+![Bell restoration](bell_pqec.png)
+
+**Full circuit** — two noisy Bell factories feeding the M=2 SWAP gadget:
+
+![Bell + PQEC circuit](bell_pqec_circuit.png)
 
 ## What is verified
 

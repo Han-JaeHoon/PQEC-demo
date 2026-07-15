@@ -72,6 +72,38 @@ knowledge of which answer is correct.
 Figures: `deutsch_pqec.png`, `deutsch_pqec_bitflip.png` (recovery + threshold),
 `deutsch_pqec_circuit.png` (full circuit).
 
+## 3. PQEC on a 2-qubit register — restoring a Bell state (new)
+
+Generalized the primitive from one qubit to a **2-qubit register** and used it
+to recover an entangled Bell state from many noisy copies.
+
+- **`bell_pqec.py`** — a noisy Bell factory (`H`–`CNOT` → `|Φ⁺⟩` + noise) emits
+  mixed 4×4 copies; the SWAP gadget becomes a genuine 5-wire SWAP *test* between
+  two 2-qubit registers (M=2 = two parallel Fredkin gates). Tracks fidelity and
+  Wootters concurrence. Saves `bell_pqec.png`.
+- **`draw_bell_pqec.py`** — draws the full circuit: two noisy Bell factories
+  feeding the M=2 SWAP gadget (`bell_pqec_circuit.png`).
+
+**Key idea.** The SWAP test extracts `ρ²/Tr[ρ²]` in any dimension (verified to
+2e-16 on 500 random 2-qubit states), concentrating weight on the dominant
+eigenvector. Below threshold that is `|Φ⁺⟩`, so purification restores both the
+fidelity and the entanglement of the Bell state.
+
+**Results**
+
+- Local depolarizing p=0.30: one copy is barely entangled (`F=0.52`,
+  concurrence `0.04`); purification restores both to 1 over `N=2^ℓ` copies
+  (`F: 0.52 → 0.78 → 0.97 → 1.00`; concurrence `0.04 → 0.56 → 0.95 → 1.00`).
+- Threshold structure by channel:
+
+  | Channel (on the Bell state)   | Behaviour |
+  |-------------------------------|-----------|
+  | Local depolarizing, both qubits | `|Φ⁺⟩` restored for all `p` except the fully-mixed point `p=3/4` (`ρ=I/4`) |
+  | Bit-flip, one qubit           | clean threshold `p=1/2`; above it purification amplifies the wrong Bell state `|Ψ⁺⟩` |
+
+Figures: `bell_pqec.png` (fidelity + concurrence recovery, both thresholds),
+`bell_pqec_circuit.png` (full circuit).
+
 ## How to run
 
 ```bash
@@ -81,10 +113,13 @@ python draw_circuits.py       # gadget / binary-tree circuits
 python deutsch_pqec.py         # PQEC on Deutsch, depolarizing noise (p_th=3/4)
 python deutsch_pqec_bitflip.py # PQEC on Deutsch, bit-flip noise    (p_th=1/2)
 python draw_deutsch_pqec.py    # full Deutsch + PQEC circuit diagram
+python bell_pqec.py            # restore a Bell state from noisy copies
+python draw_bell_pqec.py       # full noisy-Bell x2 + M=2 gadget circuit
 ```
 
 ## Possible next steps
 
-- ℓ=2 binary-tree variant that actually consumes N=2^ℓ fresh copies per output.
-- Extend to a slightly larger algorithm (e.g. 2-bit Deutsch–Jozsa) with a
-  multi-qubit SWAP gadget.
+- ℓ=2 binary-tree variant that actually consumes N=2^ℓ fresh copies per output
+  (currently modelled by recursively re-purifying the same ρ).
+- GHZ / larger entangled states with the M-qubit gadget.
+- Extend to a slightly larger algorithm (e.g. 2-bit Deutsch–Jozsa).
