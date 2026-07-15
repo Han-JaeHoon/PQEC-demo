@@ -83,3 +83,38 @@ Measured error thresholds (crossing point of ℓ=1 vs ℓ=3 curves):
 cross exactly at the thresholds p=3/4 (depolarizing) and p=1/2 (dephasing):
 
 ![Thresholds](pqec_thresholds.png)
+
+## Example: restoring a Bell state from noisy copies (M=2 PQEC)
+
+`bell_pqec.py` generalizes PQEC to a **2-qubit register**: a Bell factory
+(`H`–`CNOT` → `|Φ⁺⟩`) emits noisy mixed copies, and the SWAP gadget becomes a
+SWAP *test* between two 2-qubit registers (**M=2 = two parallel Fredkin gates**
++ ancilla). Reading the ancilla still extracts `ρ²/Tr[ρ²]` (dimension-
+independent), restoring both fidelity and entanglement (Wootters concurrence).
+
+Local depolarizing p=0.30 — one copy is barely entangled, purification restores
+it over `N=2^ℓ` copies:
+
+| rounds ℓ | copies N | fidelity | concurrence |
+|:--------:|:--------:|:--------:|:-----------:|
+| 0 | 1 | 0.520 | 0.040 |
+| 1 | 2 | 0.779 | 0.558 |
+| 2 | 4 | 0.974 | 0.948 |
+| 3 | 8 | 1.000 | 0.999 |
+
+Threshold structure by channel:
+
+- **Local depolarizing (both qubits):** `|Φ⁺⟩` stays the dominant Bell component
+  for every `p`, so it is restored everywhere **except the fully-mixed point
+  `p=3/4`** (`ρ=I/4`, a fixed point).
+- **Bit-flip (one qubit):** clean threshold **`p=1/2`** — above it purification
+  amplifies the *wrong* Bell state `|Ψ⁺⟩`.
+
+```bash
+python bell_pqec.py        # fidelity + concurrence recovery, saves bell_pqec.png
+python draw_bell_pqec.py   # full noisy-Bell x2 + M=2 gadget circuit
+```
+
+![Bell restoration](bell_pqec.png)
+
+![Bell + PQEC circuit](bell_pqec_circuit.png)
