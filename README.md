@@ -83,3 +83,29 @@ Measured error thresholds (crossing point of ℓ=1 vs ℓ=3 curves):
 cross exactly at the thresholds p=3/4 (depolarizing) and p=1/2 (dephasing):
 
 ![Thresholds](pqec_thresholds.png)
+
+## Example: PQEC on the Deutsch algorithm (depolarizing, p_th=3/4)
+
+`deutsch_pqec.py` runs the 2-qubit Deutsch algorithm on the mixed-state
+simulator with a depolarizing channel on the output query qubit, then purifies
+that qubit with the genuine SWAP-gadget circuit from `pqec.py`. The correct
+answer is the dominant eigenvector of the noisy state, so purification restores
+`P(correct answer)` toward 1 while `p < 3/4`.
+
+| rounds ℓ | P(correct) at p=0.30 |
+|:--------:|:--------------------:|
+| 0 (no QEC) | 0.800 |
+| 1 | 0.941 |
+| 2 | 0.996 |
+| 3 | 1.000 |
+
+Measured threshold (ℓ=1 vs ℓ=3 crossing): **0.750** (theory 3/4).
+
+```bash
+python deutsch_pqec.py        # recovery + threshold, saves deutsch_pqec.png
+python draw_deutsch_pqec.py   # full Deutsch + PQEC circuit
+```
+
+![Deutsch + PQEC](deutsch_pqec.png)
+
+![Deutsch + PQEC circuit](deutsch_pqec_circuit.png)
