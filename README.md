@@ -83,3 +83,28 @@ Measured error thresholds (crossing point of ℓ=1 vs ℓ=3 curves):
 cross exactly at the thresholds p=3/4 (depolarizing) and p=1/2 (dephasing):
 
 ![Thresholds](pqec_thresholds.png)
+
+## Example: PQEC on the Deutsch algorithm (bit-flip, p_th=1/2)
+
+The output qubit carries the Deutsch answer as a *computational-basis* state, so
+a bit-flip channel `ρ → (1−p)ρ + p·XρX` flips the answer bit `0↔1`. The noisy
+state stays diagonal with the correct answer as the dominant eigenvector while
+`p < 1/2`, so purification (a coherent majority vote) recovers it.
+`deutsch_pqec_bitflip.py` reuses `run_demo(...)` from `deutsch_pqec.py` with
+`qml.BitFlip`.
+
+| rounds ℓ | P(correct) at p=0.30 |
+|:--------:|:--------------------:|
+| 0 (no QEC) | 0.700 |
+| 1 | 0.845 |
+| 2 | 0.967 |
+| 3 | 0.999 |
+
+Measured threshold: **0.500** (theory 1/2); above it purification amplifies the
+flipped (wrong) answer.
+
+```bash
+python deutsch_pqec_bitflip.py   # recovery + threshold, saves deutsch_pqec_bitflip.png
+```
+
+![Deutsch + PQEC, bit-flip](deutsch_pqec_bitflip.png)
