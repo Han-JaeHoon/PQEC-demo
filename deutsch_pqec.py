@@ -26,15 +26,18 @@ is below threshold the *correct* answer is still the dominant eigenvector, so
 purifying the output drives the success probability back toward 1 -- without
 the algorithm ever knowing which answer is correct.
 
-For the local depolarizing channel the threshold is p = 3/4, identical to the
-elementary PQEC gadget in the parent paper: below it purification helps, above
-it purification amplifies the *wrong* answer.
+The threshold depends on the channel:
 
-We reuse the genuine PennyLane SWAP-gadget circuit from pqec.py to perform the
-purification rounds, so the whole pipeline -- noisy algorithm + error
-correction -- is a real mixed-state simulation, not an algebraic shortcut.
+  * local depolarizing on the output qubit ->  p_th = 3/4
+  * bit-flip on the output qubit           ->  p_th = 1/2   (deutsch_pqec_bitflip.py)
 
-Run:  python deutsch_pqec.py
+The whole pipeline (noisy algorithm + purification) reuses the genuine
+PennyLane SWAP-gadget circuit from pqec.py, so it is a real mixed-state
+simulation, not an algebraic shortcut.  The demo below is parametrized by the
+noise channel so it can be reused for both cases.
+
+Run:  python deutsch_pqec.py            # depolarizing, threshold 3/4
+      python deutsch_pqec_bitflip.py    # bit-flip,     threshold 1/2
 """
 
 import numpy as np
@@ -42,8 +45,6 @@ import matplotlib.pyplot as plt
 import pennylane as qml
 
 from pqec import swap_gadget, purity
-
-np.set_printoptions(precision=4, suppress=True)
 
 
 # ---------------------------------------------------------------------------
@@ -91,16 +92,20 @@ _dev = qml.device("default.mixed", wires=2)
 
 
 @qml.qnode(_dev)
-def _deutsch_query_rho(oracle, p_noise):
-    """Run the Deutsch algorithm with a depolarizing channel of strength
-    p_noise on the query qubit, and return the query qubit's 2x2 density
-    matrix (the reduced state we read the answer from)."""
+def deutsch_query_rho(oracle, p_noise, channel=qml.DepolarizingChannel):
+    """Run the Deutsch algorithm with a single-qubit noise `channel` of strength
+    p_noise on the output query qubit, and return that qubit's 2x2 density
+    matrix (the reduced state we read the answer from).
+
+    `channel` is any PennyLane single-qubit channel with signature
+    (p, wires=...):  qml.DepolarizingChannel (default) or qml.BitFlip.
+    """
     qml.PauliX(wires=1)          # ancilla -> |1>
     qml.Hadamard(wires=0)        # query   -> |+>
     qml.Hadamard(wires=1)        # ancilla -> |->
     oracle(0, 1)                 # apply U_f
     qml.Hadamard(wires=0)        # final interference on the query qubit
-    qml.DepolarizingChannel(p_noise, wires=0)   # gate/readout noise on output
+    channel(p_noise, wires=0)    # gate/readout noise on the output qubit
     return qml.density_matrix(wires=0)
 
 
@@ -129,96 +134,103 @@ def purify_rounds_circuit(rho, ell):
 
 
 # ===========================================================================
-print("=" * 74)
-print(" PART 1 -- Noiseless Deutsch algorithm classifies all four oracles")
-print("=" * 74)
-for name, (oracle, kind) in ORACLES.items():
-    rho = _deutsch_query_rho(oracle, 0.0)
-    bit = int(np.argmax(np.real(np.diag(rho))))
-    ok = "OK" if bit == ANSWER_BIT[kind] else "FAIL"
-    print(f"  {name:16s}  ->  measured bit {bit}  ({kind:8s})  [{ok}]")
-print("  -> query bit 0 = constant, 1 = balanced, each read with certainty.")
-
-
+# Parametrized demo -- reused for depolarizing (3/4) and bit-flip (1/2).
 # ===========================================================================
-print("\n" + "=" * 74)
-print(" PART 2 -- Noise degrades the answer; PQEC purification restores it")
-print("=" * 74)
+def run_demo(channel=qml.DepolarizingChannel, channel_name="depolarizing",
+             p_th=0.75, p_th_label="3/4", p_example=0.30,
+             outfile="deutsch_pqec.png"):
+    print("=" * 74)
+    print(f" PART 1 -- Noiseless Deutsch algorithm classifies all four oracles")
+    print("=" * 74)
+    for name, (oracle, kind) in ORACLES.items():
+        rho = deutsch_query_rho(oracle, 0.0, channel)
+        bit = int(np.argmax(np.real(np.diag(rho))))
+        ok = "OK" if bit == ANSWER_BIT[kind] else "FAIL"
+        print(f"  {name:16s}  ->  measured bit {bit}  ({kind:8s})  [{ok}]")
+    print("  -> query bit 0 = constant, 1 = balanced, each read with certainty.")
 
-# Use the balanced f=x oracle as the running example.  Its ideal output is |1>.
-oracle, kind = ORACLES["balanced  f=x"]
-p_noise = 0.30
-rho_noisy = _deutsch_query_rho(oracle, p_noise)
+    # -----------------------------------------------------------------------
+    print("\n" + "=" * 74)
+    print(" PART 2 -- Noise degrades the answer; PQEC purification restores it")
+    print("=" * 74)
 
-print(f"\n  Oracle: balanced f=x   depolarizing p = {p_noise}")
-print(f"  noisy output query qubit rho =\n{rho_noisy}")
-print(f"    purity(rho)          = {purity(rho_noisy):.4f}")
-print(f"    P(correct = '1')     = {success_prob(rho_noisy, kind):.4f}   (no QEC)")
+    oracle, kind = ORACLES["balanced  f=x"]   # ideal output |1>
+    rho_noisy = deutsch_query_rho(oracle, p_example, channel)
 
-print("\n  Applying PQEC purification rounds (genuine SWAP-gadget circuit):")
-rho = rho_noisy
-for ell in range(1, 5):
-    rho = purify_once(rho)
-    print(f"    after ell = {ell}:  purity = {purity(rho):.4f}   "
-          f"P(correct) = {success_prob(rho, kind):.4f}")
-print("  -> below threshold, purification drives the success probability -> 1.")
+    print(f"\n  Oracle: balanced f=x   {channel_name} p = {p_example}")
+    print(f"  noisy output query qubit rho =\n{rho_noisy}")
+    print(f"    purity(rho)          = {purity(rho_noisy):.4f}")
+    print(f"    P(correct = '1')     = {success_prob(rho_noisy, kind):.4f}   (no QEC)")
+
+    print("\n  Applying PQEC purification rounds (genuine SWAP-gadget circuit):")
+    rho = rho_noisy
+    for ell in range(1, 5):
+        rho = purify_once(rho)
+        print(f"    after ell = {ell}:  purity = {purity(rho):.4f}   "
+              f"P(correct) = {success_prob(rho, kind):.4f}")
+    print("  -> below threshold, purification drives the success probability -> 1.")
+
+    # -----------------------------------------------------------------------
+    print("\n" + "=" * 74)
+    print(f" PART 3 -- Threshold: purification helps iff p < {p_th_label} ({channel_name})")
+    print("=" * 74)
+
+    ps = np.linspace(0.0, 0.99, 100)
+    curves = {}
+    for ell in [0, 1, 2, 3, 5]:
+        succ = []
+        for p in ps:
+            r = deutsch_query_rho(oracle, p, channel)
+            r = purify_rounds_circuit(r, ell)
+            succ.append(success_prob(r, kind))
+        curves[ell] = np.array(succ)
+
+    # Crossing of the ell=1 and ell=3 curves = empirical threshold (skip the
+    # p~0 region where all curves coincide at 1).
+    mask = ps > 0.4
+    i = int(np.argmin(np.abs(curves[1] - curves[3])[mask]) + np.sum(~mask))
+    print(f"\n  measured threshold (ell=1 vs ell=3 crossing): p ~= {ps[i]:.3f}"
+          f"   (theory: {p_th})")
+
+    # ---- Figure ----------------------------------------------------------
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.4))
+
+    # (a) success probability vs cumulative rounds at fixed noise
+    ax = axes[0]
+    for p in [0.2, 0.4, 0.6, 0.8]:
+        r = deutsch_query_rho(oracle, p, channel)
+        succ = [success_prob(r, kind)]
+        for _ in range(6):
+            r = purify_once(r)
+            succ.append(success_prob(r, kind))
+        ax.plot(range(7), succ, "-o", ms=4, label=f"p = {p}")
+    ax.axhline(0.5, color="k", ls=":", lw=1)
+    ax.set_xlabel("purification rounds  $\\ell$")
+    ax.set_ylabel("P(correct answer)")
+    ax.set_title(f"(a) Deutsch output recovers under purification\n({channel_name} noise)")
+    ax.set_ylim(0.0, 1.02)
+    ax.legend(frameon=False)
+
+    # (b) success probability vs noise p, several depths -> cross at p_th
+    ax = axes[1]
+    for ell in [0, 1, 2, 3, 5]:
+        ax.plot(ps, curves[ell], ("r:" if ell == 0 else "-"),
+                label=("no QEC" if ell == 0 else f"$\\ell={ell}$"))
+    ax.axvline(p_th, color="k", ls="--", lw=1.2)
+    ax.text(p_th, 0.06, f" $p_{{th}}={p_th_label}$", fontsize=10)
+    ax.axhline(0.5, color="k", ls=":", lw=1)
+    ax.set_xlabel("physical error rate  p")
+    ax.set_ylabel("P(correct answer)")
+    ax.set_title(f"(b) Threshold: purification helps iff  p < {p_th_label}")
+    ax.legend(frameon=False)
+
+    fig.tight_layout()
+    fig.savefig(outfile, dpi=140)
+    print(f"\n  saved  {outfile}")
+    print("\nDone.")
+    return curves
 
 
-# ===========================================================================
-print("\n" + "=" * 74)
-print(" PART 3 -- Threshold: purification helps iff p < 3/4 (depolarizing)")
-print("=" * 74)
-
-ps = np.linspace(0.0, 0.99, 100)
-curves = {}
-for ell in [0, 1, 2, 3, 5]:
-    succ = []
-    for p in ps:
-        rho = _deutsch_query_rho(oracle, p)
-        rho = purify_rounds_circuit(rho, ell)
-        succ.append(success_prob(rho, kind))
-    curves[ell] = np.array(succ)
-
-# Locate the crossing of the ell=1 and ell=3 curves as an empirical threshold.
-i = int(np.argmin(np.abs(curves[1] - curves[3])[ps > 0.4]) + np.sum(ps <= 0.4))
-print(f"\n  measured threshold (ell=1 vs ell=3 crossing): p ~= {ps[i]:.3f}"
-      f"   (theory: 0.75)")
-
-
-# ---- Figure: success probability vs noise, for several purification depths --
-fig, axes = plt.subplots(1, 2, figsize=(11, 4.4))
-
-# (a) success probability vs cumulative rounds at fixed noise
-ax = axes[0]
-for p in [0.2, 0.4, 0.6, 0.8]:
-    rho = _deutsch_query_rho(oracle, p)
-    succ = [success_prob(rho, kind)]
-    r = rho
-    for _ in range(6):
-        r = purify_once(r)
-        succ.append(success_prob(r, kind))
-    ax.plot(range(7), succ, "-o", ms=4, label=f"p = {p}")
-ax.axhline(0.5, color="k", ls=":", lw=1)
-ax.set_xlabel("purification rounds  $\\ell$")
-ax.set_ylabel("P(correct answer)")
-ax.set_title("(a) Deutsch output recovers under purification")
-ax.set_ylim(0.0, 1.02)
-ax.legend(frameon=False)
-
-# (b) success probability vs noise p, for several fixed depths -> cross at 3/4
-ax = axes[1]
-for ell in [0, 1, 2, 3, 5]:
-    ax.plot(ps, curves[ell], ("r:" if ell == 0 else "-"),
-            label=("no QEC" if ell == 0 else f"$\\ell={ell}$"))
-ax.axvline(0.75, color="k", ls="--", lw=1.2)
-ax.text(0.75, 0.06, " $p_{th}=3/4$", fontsize=10)
-ax.axhline(0.5, color="k", ls=":", lw=1)
-ax.set_xlabel("physical error rate  p")
-ax.set_ylabel("P(correct answer)")
-ax.set_title("(b) Threshold: purification helps iff  p < 3/4")
-ax.legend(frameon=False)
-
-fig.tight_layout()
-fig.savefig("deutsch_pqec.png", dpi=140)
-print("\n  saved  deutsch_pqec.png")
-print("\nDone.")
+if __name__ == "__main__":
+    # Default: local depolarizing channel on the output qubit, threshold 3/4.
+    run_demo()

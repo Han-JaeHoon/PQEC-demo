@@ -38,8 +38,11 @@ Plugged the purification gadget into a real computation to show it corrects the
 output of an actual quantum algorithm, not just abstract density matrices.
 
 - **`deutsch_pqec.py`** — runs the 2-qubit Deutsch algorithm on the mixed-state
-  simulator with a depolarizing channel on the output query qubit, then purifies
-  that qubit with the genuine SWAP-gadget circuit from `pqec.py`.
+  simulator with a noise channel on the output query qubit, then purifies that
+  qubit with the genuine SWAP-gadget circuit from `pqec.py`. Parametrized by the
+  noise channel via `run_demo(...)`; default is depolarizing (`p_th=3/4`).
+- **`deutsch_pqec_bitflip.py`** — reuses `run_demo(...)` with a **bit-flip**
+  channel on the output qubit (`p_th=1/2`), saving `deutsch_pqec_bitflip.png`.
 - **`draw_deutsch_pqec.py`** — draws the full circuit for one purification
   round: two noisy Deutsch runs feeding a SWAP gadget between the two query
   qubits (`deutsch_pqec_circuit.png`).
@@ -56,12 +59,18 @@ knowledge of which answer is correct.
   with no noise.
 - At depolarizing p=0.30 the success probability recovers over purification
   rounds: `0.80 → 0.94 → 0.996 → 1.000` (ℓ = 0,1,2,3).
-- The same **p=3/4** threshold reappears: below it purification drives
-  P(correct) → 1, above it it amplifies the wrong answer → 0; all round-count
-  curves cross exactly at p=3/4 (measured 0.750).
+- The **threshold depends on the output-qubit noise channel**:
 
-Figures: `deutsch_pqec.png` (recovery + threshold), `deutsch_pqec_circuit.png`
-(full circuit).
+  | Channel      | Recovery (p=0.30)        | Measured `p_th` | Theory |
+  |--------------|--------------------------|-----------------|--------|
+  | Depolarizing | `0.80 → 1.000`           | 0.750           | 3/4    |
+  | Bit-flip     | `0.70 → 1.000`           | 0.500           | 1/2    |
+
+  Below threshold purification drives P(correct) → 1; above it, it amplifies the
+  wrong answer → 0. All round-count curves cross exactly at `p_th`.
+
+Figures: `deutsch_pqec.png`, `deutsch_pqec_bitflip.png` (recovery + threshold),
+`deutsch_pqec_circuit.png` (full circuit).
 
 ## How to run
 
@@ -69,13 +78,13 @@ Figures: `deutsch_pqec.png` (recovery + threshold), `deutsch_pqec_circuit.png`
 pip install -r requirements.txt
 python verify_pqec.py         # core equation checks + figures
 python draw_circuits.py       # gadget / binary-tree circuits
-python deutsch_pqec.py        # PQEC applied to the Deutsch algorithm
-python draw_deutsch_pqec.py   # full Deutsch + PQEC circuit diagram
+python deutsch_pqec.py         # PQEC on Deutsch, depolarizing noise (p_th=3/4)
+python deutsch_pqec_bitflip.py # PQEC on Deutsch, bit-flip noise    (p_th=1/2)
+python draw_deutsch_pqec.py    # full Deutsch + PQEC circuit diagram
 ```
 
 ## Possible next steps
 
-- Dephasing version of the Deutsch demo (threshold p=1/2).
 - ℓ=2 binary-tree variant that actually consumes N=2^ℓ fresh copies per output.
 - Extend to a slightly larger algorithm (e.g. 2-bit Deutsch–Jozsa) with a
   multi-qubit SWAP gadget.

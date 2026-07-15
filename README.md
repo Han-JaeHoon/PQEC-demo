@@ -29,7 +29,9 @@ precision, then reproduces the error-correction and threshold behaviour.
 | [`pqec.py`](pqec.py) | Core library: SWAP gadget as an explicit `default.mixed` circuit (H–CSWAP–H), purification map, noise channels, fidelity helpers |
 | [`verify_pqec.py`](verify_pqec.py) | Verifies Eqs. (5)–(10), (7), (34); reproduces fidelity-vs-rounds and error thresholds; saves figures |
 | [`draw_circuits.py`](draw_circuits.py) | Draws the full quantum circuits (Figs. 1 & 2) |
-| [`deutsch_pqec.py`](deutsch_pqec.py) | **Applies PQEC to a real algorithm** — purifies the noisy output of the 2-qubit Deutsch algorithm and restores the answer |
+| [`deutsch_pqec.py`](deutsch_pqec.py) | **Applies PQEC to a real algorithm** — purifies the noisy output of the 2-qubit Deutsch algorithm and restores the answer (depolarizing, `p_th=3/4`) |
+| [`deutsch_pqec_bitflip.py`](deutsch_pqec_bitflip.py) | Same demo under a **bit-flip** channel on the output qubit (`p_th=1/2`) |
+| [`draw_deutsch_pqec.py`](draw_deutsch_pqec.py) | Draws the full Deutsch + one-round PQEC circuit |
 
 ## Setup & run
 
@@ -40,8 +42,9 @@ pip install -r requirements.txt
 
 python verify_pqec.py     # numerical checks + result figures
 python draw_circuits.py   # circuit diagrams
-python deutsch_pqec.py    # PQEC applied to the Deutsch algorithm
-python draw_deutsch_pqec.py   # full Deutsch + PQEC circuit diagram
+python deutsch_pqec.py         # PQEC on Deutsch, depolarizing noise (p_th=3/4)
+python deutsch_pqec_bitflip.py # PQEC on Deutsch, bit-flip noise    (p_th=1/2)
+python draw_deutsch_pqec.py    # full Deutsch + PQEC circuit diagram
 ```
 
 ## Applying PQEC to an algorithm: the Deutsch algorithm
@@ -71,6 +74,23 @@ two Deutsch runs (each `X·H·H·U_f·H·noise`) feeding a SWAP gadget
 (`H–CSWAP–H–measure`) between the two query qubits:
 
 ![Deutsch + PQEC circuit](deutsch_pqec_circuit.png)
+
+### Different noise → different threshold
+
+The output qubit carries the answer as a *computational-basis* state, so the
+threshold depends on the noise channel. `deutsch_pqec.py` is parametrized by the
+channel; [`deutsch_pqec_bitflip.py`](deutsch_pqec_bitflip.py) reuses it with a
+**bit-flip** channel `ρ → (1−p)ρ + p·XρX`, which flips the answer bit `0↔1`. The
+noisy state stays diagonal in the answer basis with the correct answer as the
+dominant eigenvector while `p < 1/2`, so purification (a coherent majority vote)
+recovers it — `P(correct) = 0.70 → 0.84 → 0.97 → 0.999 → 1.000` at `p=0.30`.
+
+| Channel on output qubit | Recovery below threshold | Measured `p_th` | Theory |
+|-------------------------|--------------------------|-----------------|--------|
+| Depolarizing            | `0.80 → 1.000`           | **0.750**       | 3/4    |
+| Bit-flip                | `0.70 → 1.000`           | **0.500**       | 1/2    |
+
+![Deutsch + PQEC, bit-flip](deutsch_pqec_bitflip.png)
 
 ## What is verified
 
