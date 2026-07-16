@@ -104,6 +104,38 @@ fidelity and the entanglement of the Bell state.
 Figures: `bell_pqec.png` (fidelity + concurrence recovery, both thresholds),
 `bell_pqec_circuit.png` (full circuit).
 
+## 4. The paper's actual protocol — purified observables (new)
+
+The earlier demos read the purified state off the density matrix
+(`ρ² = blk₊ − blk₋`), which is an algebraic shortcut. The paper's real protocol
+is an **observable-estimation** scheme: keep the SWAP-gadget ancilla, measure
+**Z on the ancilla** together with the target observable **O**, and take the
+ratio of correlators.
+
+- **`pqec_observable.py`** — after the gadget the joint (ancilla, register)
+  state is `½(I⊗ρ + Z⊗ρ²)`, so `⟨Z⊗O⟩ = Tr(Oρ²)`, `⟨Z⊗I⟩ = Tr(ρ²)`, and
+  `⟨O⟩_purified = ⟨Z⊗O⟩/⟨Z⊗I⟩ = Tr(Oρ²)/Tr(ρ²)`. For `ℓ` rounds the sign is the
+  total parity `Ω = Πᵢ Z_i` of all ancillas: `⟨O⟩_ℓ = ⟨Ω⊗O⟩/⟨Ω⟩ =
+  Tr(Oρ^N)/Tr(ρ^N)`, `N=2^ℓ`. Implemented as genuine circuits (ℓ=1 on 5 wires,
+  ℓ=2 binary tree on 11 wires) and matched to the analytic value to ~1e-16.
+
+**Scenario (depolarized Bell, `ρ_ε=(1-ε)|Φ⁺⟩⟨Φ⁺|+ε I/D`, `O=|Φ⁺⟩⟨Φ⁺|`, ε=0.40):**
+
+| | `⟨O⟩` | effective `ε′` |
+|--|:-----:|:--------------:|
+| ideal | 1.000 | 0 |
+| no QEC | 0.700 | 0.400 |
+| PQEC ℓ=1 | 0.942 | 0.077 |
+| PQEC ℓ=2 | 0.999 | 0.002 |
+| PQEC ℓ=3 | 1.000 | 0.000 |
+
+The measured observable improves toward its ideal value; PQEC returns the
+expectation value of a much less noisy effective state (`ε′ ≪ ε`). This is the
+key correction over §2–3: the purified value is **measured** (ancilla-parity
+correlator), not obtained by subtracting density matrices.
+
+Figure: `pqec_observable.png`.
+
 ## How to run
 
 ```bash
@@ -115,6 +147,7 @@ python deutsch_pqec_bitflip.py # PQEC on Deutsch, bit-flip noise    (p_th=1/2)
 python draw_deutsch_pqec.py    # full Deutsch + PQEC circuit diagram
 python bell_pqec.py            # restore a Bell state from noisy copies
 python draw_bell_pqec.py       # full noisy-Bell x2 + M=2 gadget circuit
+python pqec_observable.py      # purified observable via ancilla-parity correlator
 ```
 
 ## Possible next steps

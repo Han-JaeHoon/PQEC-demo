@@ -34,6 +34,7 @@ precision, then reproduces the error-correction and threshold behaviour.
 | [`draw_deutsch_pqec.py`](draw_deutsch_pqec.py) | Draws the full Deutsch + one-round PQEC circuit |
 | [`bell_pqec.py`](bell_pqec.py) | **Restores a Bell state** from many noisy copies — 2-qubit (M=2) PQEC recovers both fidelity and entanglement |
 | [`draw_bell_pqec.py`](draw_bell_pqec.py) | Draws the full noisy-Bell ×2 + M=2 SWAP-gadget circuit |
+| [`pqec_observable.py`](pqec_observable.py) | **The paper's actual protocol**: purified *observable* `⟨O⟩ = ⟨Ω⊗O⟩/⟨Ω⟩` measured from the ancilla-parity correlator; shows `⟨O⟩` improving toward ideal |
 
 ## Setup & run
 
@@ -49,6 +50,7 @@ python deutsch_pqec_bitflip.py # PQEC on Deutsch, bit-flip noise    (p_th=1/2)
 python draw_deutsch_pqec.py    # full Deutsch + PQEC circuit diagram
 python bell_pqec.py            # restore a Bell state from noisy copies
 python draw_bell_pqec.py       # full noisy-Bell x2 + M=2 gadget circuit
+python pqec_observable.py      # purified observable via ancilla-parity correlator
 ```
 
 ## Applying PQEC to an algorithm: the Deutsch algorithm
@@ -129,6 +131,47 @@ Threshold structure depends on the channel (measured):
 **Full circuit** — two noisy Bell factories feeding the M=2 SWAP gadget:
 
 ![Bell + PQEC circuit](bell_pqec_circuit.png)
+
+## The paper's actual protocol: purified observables
+
+The SWAP gadget does **not** deterministically output a purified state, and it is
+**not** postselection. After the gadget the joint (ancilla, kept register) state is
+
+```
+P₊|0⟩⟨0|⊗ρ₊ + P₋|1⟩⟨1|⊗ρ₋ = ½( I⊗ρ + Z⊗ρ² ).
+```
+
+So for **any** observable `O`, measuring **Z on the ancilla together with O on the
+register** gives, on average, `⟨Z⊗O⟩ = Tr(Oρ²)` and `⟨Z⊗I⟩ = Tr(ρ²)`, hence the
+purified expectation value is a ratio of two physically measured correlators:
+
+```
+⟨O⟩_purified = ⟨Z⊗O⟩ / ⟨Z⊗I⟩ = Tr(Oρ²)/Tr(ρ²).
+```
+
+For `ℓ` rounds (binary tree, `N=2^ℓ` copies) the sign is the **total parity**
+`Ω = Πᵢ Z_(anc,i)` of all ancillas: `⟨O⟩_ℓ = ⟨Ω⊗O⟩/⟨Ω⟩ = Tr(Oρ^N)/Tr(ρ^N)`. This is
+a genuine measurement (Pauli-Z on ancillas correlated with `O`), **not** an algebraic
+subtraction of density matrices. [`pqec_observable.py`](pqec_observable.py) measures it
+on a real circuit (ℓ=1 on 5 wires, ℓ=2 tree on 11 wires) and matches the analytic value
+to ~1e-16.
+
+Scenario — a depolarized Bell state `ρ_ε=(1-ε)|Φ⁺⟩⟨Φ⁺|+ε I/D`, observable
+`O=|Φ⁺⟩⟨Φ⁺|` (ideal `⟨O⟩=1`), at `ε=0.30`... shown here at `ε=0.40`:
+
+| | `⟨O⟩` | effective `ε′` |
+|--|:-----:|:--------------:|
+| ideal | 1.000 | 0 |
+| no QEC | 0.700 | 0.400 |
+| PQEC ℓ=1 (N=2) | 0.942 | 0.077 |
+| PQEC ℓ=2 (N=4) | 0.999 | 0.002 |
+| PQEC ℓ=3 (N=8) | 1.000 | 0.000 |
+
+PQEC returns the expectation value of a **much less noisy** effective Bell state
+(`ε′ ≪ ε`), for the fidelity projector and for a generic Pauli observable (`⟨Z⊗Z⟩`)
+alike.
+
+![PQEC observable](pqec_observable.png)
 
 ## What is verified
 
