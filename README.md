@@ -83,3 +83,57 @@ Measured error thresholds (crossing point of ℓ=1 vs ℓ=3 curves):
 cross exactly at the thresholds p=3/4 (depolarizing) and p=1/2 (dephasing):
 
 ![Thresholds](pqec_thresholds.png)
+
+## Example: faulty PQEC — noise on the gadget itself
+
+Most PQEC studies put noise only on the **input** copies and assume the SWAP
+gadget (H, controlled-SWAP/Fredkin, ancilla readout) is perfect. In reality
+those gates are noisy too — especially the 3-qubit Fredkin — so the purifier can
+inject as much error as it removes. This is the fault-tolerance question: **does
+PQEC still help when the correction hardware is itself faulty?**
+
+[`pqec_gate_noise.py`](pqec_gate_noise.py) simulates it by **inserting a noise
+channel after every gadget gate**:
+
+```python
+qml.Hadamard(0);              _dep(0, g)          # depolarizing after H
+qml.ctrl(qml.SWAP, 0)(wires=[1, 3])              # Fredkin (3-qubit gate)
+for w in (0, 1, 3): _dep(w, g)                    #  → depol on each involved wire
+qml.ctrl(qml.SWAP, 0)(wires=[2, 4])
+for w in (0, 2, 4): _dep(w, g)
+qml.Hadamard(0);              _dep(0, g)
+qml.BitFlip(r, wires=0)                           # optional ancilla readout error
+```
+
+It then measures the purified observable `⟨O⟩ = ⟨Z⊗O⟩ / ⟨Z⊗I⟩` on a depolarized
+Bell state (`O = |Φ⁺⟩⟨Φ⁺|`).
+
+### Findings
+
+**Gate-error threshold `g*`** — gate noise degrades `⟨O⟩_PQEC`; beyond `g*` the
+purifier does *worse than no QEC* (it adds more error than it removes). At input
+noise `ε=0.40`:
+
+| gate noise `g` | `⟨O⟩_PQEC` | vs no-QEC (0.700) |
+|:--------------:|:----------:|:-----------------:|
+| 0.00 | 0.942 | +0.242 (helps) |
+| 0.10 | 0.770 | +0.070 (helps) |
+| 0.14 | 0.708 | +0.008 (helps) |
+| 0.16 | 0.678 | −0.022 (**hurts**) |
+| 0.30 | 0.499 | −0.201 (**hurts**) |
+
+→ `g* ≈ 0.145`.
+
+**`g*` grows with input noise `ε`** (`ε=0.2 → g*≈0.075`, `0.4 → 0.145`,
+`0.6 → 0.205`): a nearly-clean input has little to gain and is easily spoiled by
+a faulty purifier, while a very noisy input tolerates a sloppier gadget.
+
+**Readout error self-mitigates** — a symmetric ancilla readout flip scales both
+`⟨Z⊗O⟩` and `⟨Z⊗I⟩` by `1−2r`, which cancels in the ratio, so `⟨O⟩_PQEC` is
+independent of `r`.
+
+```bash
+python pqec_gate_noise.py   # gate-error threshold + readout cancellation, saves figure
+```
+
+![Faulty PQEC](pqec_gate_noise.png)
