@@ -35,6 +35,7 @@ precision, then reproduces the error-correction and threshold behaviour.
 | [`bell_pqec.py`](bell_pqec.py) | **Restores a Bell state** from many noisy copies — 2-qubit (M=2) PQEC recovers both fidelity and entanglement |
 | [`draw_bell_pqec.py`](draw_bell_pqec.py) | Draws the full noisy-Bell ×2 + M=2 SWAP-gadget circuit |
 | [`pqec_observable.py`](pqec_observable.py) | **The paper's actual protocol**: purified *observable* `⟨O⟩ = ⟨Ω⊗O⟩/⟨Ω⟩` measured from the ancilla-parity correlator; shows `⟨O⟩` improving toward ideal |
+| [`pqec_gate_noise.py`](pqec_gate_noise.py) | **Faulty PQEC**: noise on the gadget gates (H, Fredkin, readout); shows the gate-error threshold `g*` beyond which purifying hurts |
 
 ## Setup & run
 
@@ -51,6 +52,7 @@ python draw_deutsch_pqec.py    # full Deutsch + PQEC circuit diagram
 python bell_pqec.py            # restore a Bell state from noisy copies
 python draw_bell_pqec.py       # full noisy-Bell x2 + M=2 gadget circuit
 python pqec_observable.py      # purified observable via ancilla-parity correlator
+python pqec_gate_noise.py      # faulty gadget: gate-error threshold g*
 ```
 
 ## Applying PQEC to an algorithm: the Deutsch algorithm
@@ -172,6 +174,28 @@ PQEC returns the expectation value of a **much less noisy** effective Bell state
 alike.
 
 ![PQEC observable](pqec_observable.png)
+
+## Faulty PQEC: noise on the gadget itself
+
+So far noise lived only on the input copies; the gadget (H, controlled-SWAP, H,
+readout) was perfect. In reality those gates are noisy too — especially the
+3-qubit Fredkin — so the purifier can inject as much error as it removes.
+[`pqec_gate_noise.py`](pqec_gate_noise.py) simulates this by **inserting a
+depolarizing channel after every gate** (strength `g`), plus an optional ancilla
+readout bit-flip `r`, then measures the same purified observable
+`⟨O⟩ = ⟨Z⊗O⟩/⟨Z⊗I⟩`.
+
+- **Gate-error threshold `g*`.** Gate noise degrades `⟨O⟩_PQEC`; beyond `g*` the
+  purifier does **worse than no QEC** (it adds more error than it removes). At
+  `ε=0.40`, `g*≈0.145`.
+- **`g*` grows with input noise `ε`** (`ε=0.2→g*≈0.075`, `0.4→0.145`,
+  `0.6→0.205`): a nearly-clean input has little to gain and is easily spoiled by
+  a faulty purifier, while a very noisy input tolerates a sloppier gadget.
+- **Readout error self-mitigates.** A symmetric ancilla readout flip scales both
+  `⟨Z⊗O⟩` and `⟨Z⊗I⟩` by `1−2r`, which cancels in the ratio — `⟨O⟩_PQEC` is
+  independent of `r`.
+
+![Faulty PQEC](pqec_gate_noise.png)
 
 ## What is verified
 

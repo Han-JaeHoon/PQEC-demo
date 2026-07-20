@@ -136,6 +136,27 @@ correlator), not obtained by subtracting density matrices.
 
 Figure: `pqec_observable.png`.
 
+## 5. Faulty PQEC — noise on the gadget operations (new)
+
+Earlier demos assumed a perfect gadget. Here the **gadget gates themselves are
+noisy** (the realistic fault-tolerance question).
+
+- **`pqec_gate_noise.py`** — inserts a depolarizing channel after every gadget
+  gate (H, and each Fredkin, strength `g`) plus an optional ancilla readout
+  bit-flip `r`, then measures `⟨O⟩ = ⟨Z⊗O⟩/⟨Z⊗I⟩` on the genuine circuit.
+
+**Findings**
+
+- **Gate-error threshold `g*`:** gate noise degrades `⟨O⟩_PQEC`; beyond `g*` the
+  purifier is worse than no QEC. At `ε=0.40`, `g*≈0.145`.
+- `g*` grows with input noise `ε` (`0.2→0.075`, `0.4→0.145`, `0.6→0.205`): a
+  nearly-clean input is easily spoiled by a faulty purifier; a noisy input
+  tolerates a sloppier gadget.
+- **Readout error self-mitigates:** a symmetric ancilla flip scales `⟨Z⊗O⟩` and
+  `⟨Z⊗I⟩` by the same `1−2r`, cancelling in the ratio.
+
+Figure: `pqec_gate_noise.png`.
+
 ## How to run
 
 ```bash
@@ -148,6 +169,7 @@ python draw_deutsch_pqec.py    # full Deutsch + PQEC circuit diagram
 python bell_pqec.py            # restore a Bell state from noisy copies
 python draw_bell_pqec.py       # full noisy-Bell x2 + M=2 gadget circuit
 python pqec_observable.py      # purified observable via ancilla-parity correlator
+python pqec_gate_noise.py      # faulty gadget: gate-error threshold g*
 ```
 
 ## Possible next steps
