@@ -155,7 +155,8 @@ noisy** (the realistic fault-tolerance question).
 - **Readout error self-mitigates:** a symmetric ancilla flip scales `⟨Z⊗O⟩` and
   `⟨Z⊗I⟩` by the same `1−2r`, cancelling in the ratio.
 
-Figure: `pqec_gate_noise.png`.
+Figures: `pqec_gate_noise.png` (thresholds), `pqec_gate_noise_circuit.png`
+(faulty-gadget circuit via `draw_pqec_gate_noise.py`).
 
 ## How to run
 
@@ -170,6 +171,7 @@ python bell_pqec.py            # restore a Bell state from noisy copies
 python draw_bell_pqec.py       # full noisy-Bell x2 + M=2 gadget circuit
 python pqec_observable.py      # purified observable via ancilla-parity correlator
 python pqec_gate_noise.py      # faulty gadget: gate-error threshold g*
+python draw_pqec_gate_noise.py # faulty-gadget circuit diagram
 ```
 
 ## Possible next steps

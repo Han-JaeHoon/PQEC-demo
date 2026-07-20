@@ -53,6 +53,7 @@ python bell_pqec.py            # restore a Bell state from noisy copies
 python draw_bell_pqec.py       # full noisy-Bell x2 + M=2 gadget circuit
 python pqec_observable.py      # purified observable via ancilla-parity correlator
 python pqec_gate_noise.py      # faulty gadget: gate-error threshold g*
+python draw_pqec_gate_noise.py # draws the faulty-gadget circuit
 ```
 
 ## Applying PQEC to an algorithm: the Deutsch algorithm
@@ -196,6 +197,12 @@ readout bit-flip `r`, then measures the same purified observable
   independent of `r`.
 
 ![Faulty PQEC](pqec_gate_noise.png)
+
+**Circuit** ([`draw_pqec_gate_noise.py`](draw_pqec_gate_noise.py)) — the gadget
+with a `Depol(g)` box after every gate and a readout `BitFlip(r)`; the input
+noise on the two Bell copies is the `Depol(ε)` boxes after each `H`–`CNOT`:
+
+![Faulty PQEC circuit](pqec_gate_noise_circuit.png)
 
 ## What is verified
 
