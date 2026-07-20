@@ -108,6 +108,13 @@ qml.BitFlip(r, wires=0)                           # optional ancilla readout err
 It then measures the purified observable `⟨O⟩ = ⟨Z⊗O⟩ / ⟨Z⊗I⟩` on a depolarized
 Bell state (`O = |Φ⁺⟩⟨Φ⁺|`).
 
+**Circuit** ([`draw_pqec_gate_noise.py`](draw_pqec_gate_noise.py)) — the full
+gadget with a `Depol(g)` box after every gate and a readout `BitFlip(r)` before
+the measurement. The input noise on the two Bell copies is the `Depol(ε)` boxes
+right after each `H`–`CNOT` preparation (left of the barrier):
+
+![Faulty PQEC circuit](pqec_gate_noise_circuit.png)
+
 ### Findings
 
 **Gate-error threshold `g*`** — gate noise degrades `⟨O⟩_PQEC`; beyond `g*` the
@@ -133,7 +140,8 @@ a faulty purifier, while a very noisy input tolerates a sloppier gadget.
 independent of `r`.
 
 ```bash
-python pqec_gate_noise.py   # gate-error threshold + readout cancellation, saves figure
+python pqec_gate_noise.py       # gate-error threshold + readout cancellation, saves figure
+python draw_pqec_gate_noise.py  # draws the faulty-gadget circuit
 ```
 
 ![Faulty PQEC](pqec_gate_noise.png)
